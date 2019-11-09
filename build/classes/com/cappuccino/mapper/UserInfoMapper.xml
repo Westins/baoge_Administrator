@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cappuccino.dao.UserInfoMapper">
+	<select id="selByUserGL" resultType="User" parameterType="String">
+	<!-- 查询对应管理员账号的信息 -->
+		SELECT UserId,UserPwd,UserAge,UserSex,UserName,UserImg,UserPhone,UserAccount
+		from userinfo where UserAccount = #{userAccount} and UserPower in (0,5) and UserState=1
+	</select>
+	
+	<select id="selAllUser" resultType="User">
+	<!-- 查询所有的会员 -->
+		select * from userinfo where userName like "%"#{userName}"%"   
+		
+			<if test="1==1">
+				and UserPower in(1,2) and UserState in(1,0) 
+			</if>
+			<if test="startDate!=null and startDate!=''">
+				and UserRegisterTime &gt;= #{startDate}
+				<if test="endDate!=null and endDate!=''">
+					and UserRegisterTime &lt;= #{endDate}
+				</if>
+			</if>	
+			<if test="1==1">
+				 ORDER BY userRegTime DESC,UserState 
+			</if>
+					
+	</select>
+	
+	<!-- 单选删除用户，改为2状态 -->
+	<update id="upUserState" parameterType="String">
+		update userinfo set userState = 2 where userId = #{userId}
+	</update>
+	
+	<!-- 启用用户，就是改变用户的状态为1.正常 -->	<!-- 对已经停用的管理员进行恢复启用操作 -->
+	<update id="upUserStart" parameterType="String">
+		update userinfo set userState = 1 where userId = #{userId}
+	</update>
+	<!-- 停用用户，就是改变用户的状态为0.封禁 -->	<!-- 对管理员进行停用操作 -->
+	<update id="upUserStop" parameterType="String">
+		update userinfo set userState = 0 where userId = #{userId}
+	</update>
+	
+	<!-- 根据userId查询用户信息 -->
+	<select id="selUserById" resultType="User" parameterType="String">
+		select * from userinfo where userId = #{userId}
+	</select>
+	
+	<!-- 根据用户id，修改该用户的相关信息 -->
+	<update id="upByIdUser">
+		update userinfo set userName = #{userName},userSex=#{userSex},userPhone=#{userPhone},userState=#{userState} where userId = #{userId}
+	</update>
+	
+	<!-- 删除或停用用户时，下架店铺以及商品 -->
+	<update id="upUserShopStop" parameterType="String">
+		update shops set shopState =3 where userId = #{userId}
+	</update>
+	<update id="upGoodsStop" parameterType="String">
+		update goods set goodsState =4 where shopsId = #{shopsId}
+	</update>
+	<!--  -->
+	<!-- 恢复启用用户时，上架架店铺以及商品 -->
+	<update id="upUserShopStart" parameterType="String">
+		update shops set shopState =1 where userId = #{userId}
+	</update>
+	<update id="upGoodsStart" parameterType="String">
+		update goods set goodsState =1 where shopsId = #{shopsId}
+	</update>
+	<!--  -->
+	
+	<!-- 查询出所有得管理员账号 -->
+	<select id="selAllAdmin" resultType="User">
+		select * from userinfo where UserPower in(0,5) and UserState in(1,0) and UserName like "%" #{userName}"%"
+	</select>
+	
+	<!-- 添加管理员的方法 -->
+	<insert id="addAdmin">
+		insert into userinfo(UserName,UserAccount,UserPwd,UserSex,UserPhone,UserPower,UserRegTime,UserState,UserEmail) 
+		values(#{userName},#{userAccount},#{userPwd},#{userSex},#{userPhone},#{userPower},#{userRegTime},#{userState},#{userEmail})
+	</insert>
+	
+	<!-- 根据用户id，修改该管理员的相关信息 -->
+	<update id="upByIdAdmin">
+		update userinfo set userName = #{userName},userSex=#{userSex},userPhone=#{userPhone},userAge=#{userAge},userEmail=#{userEmail} where userId = #{userId}
+	</update>
+	
+	
+	<!-- 用户修改密码 -->
+	<update id="upUserPwd" parameterType="String">
+		update userinfo set userPwd = #{userPwd} where userId=#{userId}
+	</update>
+	
+	
+	
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cappuccino.dao.ShopsMapper">
+
+	<!-- 对店铺进行的查询功能块 -->
+	<select id="getAllShops" resultType="Shops">
+	 	SELECT * FROM shops WHERE ShopsName LIKE "%" #{shopsName}"%" 
+	 	<if test="1==1"><!-- 0.关闭 1.正常 4.审核 -->
+	 		and ShopState in(0,1,4) 
+	 	</if>
+	 	<choose>
+	 		<when test="1==chooseUD">
+	 			ORDER BY ShopsSalesVolume ASC
+	 		</when>
+	 		<when test="2==chooseUD">
+	 			ORDER BY ShopsSalesVolume DESC
+	 		</when>
+		 	<otherwise>
+		 		ORDER BY ShopsTime DESC,ShopState DESC
+		 	</otherwise>
+		 </choose>
+
+	</select>
+	
+
+	<!-- 分步查询，对店铺内的商品数统计查询功能块 -->
+	<select id="selGoodsCount" resultType="int" parameterType="String">
+		SELECT COUNT(*) from goods WHERE ShopsId = #{shopId}
+	</select>
+	
+	<!-- 分步查询本网站一共有多少的有效店铺0，1 -->
+	<select id="selAllShopsCount" resultType="int">
+		SELECT count(*) FROM shops WHERE ShopState in(0,1)
+	</select>
+	
+	<!-- 对店铺的状态进行封禁修改操作 -->
+	<update id="upShopsStop" parameterType="String">
+		update shops set shopState = 0 where shopsId = #{shopsId}
+	</update><!-- 对店铺的商品进行全部下架修改操作0.封禁 -->
+	<update id="upFJshopGoods" parameterType="String">
+		update goods set goodsState = 0 where shopsId = #{shopsId}
+	</update>
+	
+	<!-- 对店铺的状态进行恢复启用修改操作 -->
+	<update id="upShopsStart" parameterType="String">
+		update shops set shopState = 1 where shopsId = #{shopsId}
+	</update><!-- 对店铺的商品进行全部上架修改操作1.正常 -->
+	<update id="upHFshopGoods" parameterType="String">
+		update goods set goodsState = 1 where shopsId = #{shopsId}
+	</update>
+	<!-- 2 代表审核 -->
+	
+	<!-- 单选删除用户，改为3状态 -->
+	<update id="upDlshopsState" parameterType="String">
+		update shops set shopState = 3 where shopsId = #{shopsId}
+	</update>
+	
+	<!-- 对于审核状态的店铺进行通过操作 该状态为1 -->
+	<update id="upShopsAdopt" parameterType="String">
+		update shops set shopState = 1 where shopsId = #{shopsId}
+	</update>
+	
+	<!-- 这是一个根据shopid查询shop信息的方法 -->
+	<select id="selShopsById" resultType="Shops">
+		select * from shops where shopsId = #{shopsId}
+	</select>
+	
+	
+	<!-- 查询所有的商铺，（审核店铺，封禁店铺） -->
+	<select id="selConditionSF"  resultType="Shops">
+		select * from shops where ShopState in(0,1,4) 
+		<choose>
+	 		<when test="1==clickGb">
+	 			ORDER BY ShopState ASC
+	 		</when>
+	 		<when test="2==clickSh">
+	 			ORDER BY ShopState DESC
+	 		</when>
+		 </choose>
+	</select>	
+	
+	<!-- 查询所有商铺的订单数 -->
+	<select id="selShopsSalesVolume" resultType="int">
+		SELECT COUNT(*) FROM ordersinfo where OrdersInfoState in(0,1,2,3,4,5)
+	</select>
+	
+	<!-- 查询评论数 -->
+	<select id="selAllPlcount" resultType="int">
+		select count(*) from goodsreview
+	</select>
+	
+	<!-- 折线图查询 -->
+	<!-- 星期一 -->
+	<select id="selyi" resultType="int" parameterType="String">	SELECT count(*) FROM ordersinfo where OrdersInfoTime =#{time}</select>
+	<!-- 星期二 -->
+	<select id="seler" resultType="int" parameterType="String">SELECT count(*) FROM ordersinfo where OrdersInfoTime =#{time} AND OrdersInfoState in (0,5)</select>
+	<!-- 星期三 -->
+	<select id="selsan" resultType="int" parameterType="String">SELECT count(*) FROM ordersinfo where OrdersInfoTime =#{time} AND OrdersInfoState in (6)</select>
+	
+	
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+		PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	
+	<typeAliases>
+		<typeAlias alias="User" type="com.cappuccino.pojo.UserInfo"/>
+		<typeAlias alias="Goods" type="com.cappuccino.pojo.Goods"/>
+		<typeAlias type="com.cappuccino.pojo.Shops" alias="Shops"/>
+	</typeAliases>
+ 
+</configuration>
+ 

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cappuccino.dao.GoodsMapper">
+
+
+	<resultMap type="Goods" id="goodsMap">
+		<id column="GoodsId" property="goodsId" />
+		<result column="GoodsName" property="goodsName" />
+		<result column="GoodsImg" property="goodsImg" />
+		<result column="GoodsImgIntroduce" property="goodsImgIntroduce" />
+		<result column="GoodsVideoIntroduce" property="goodsVideoIntroduce" />
+		<result column="GoodsTestIntroduce" property="goodsTestIntroduce" />
+		<result column="GoodsOriginalPrice" property="goodsOriginalPrice" />
+		<result column="GoodsDiscount" property="goodsDiscount" />
+		<result column="price" property="price" />
+		<result column="GoodsTypeId" property="goodsTypeId" />
+		<result column="GoodsSalesVolume" property="goodsSalesVolume" />
+		<result column="GoodsTime" property="goodsTime" />
+		<result column="GoodsModel" property="goodsModel" />
+		<result column="GoodsState" property="goodsState" />
+		<result column="GoodsColor" property="goodsColor" />
+		<result column="shopsId" property="shopsId" />
+		<!-- 多对一 -->
+		<association property="shops" javaType="Shops">
+			<id column="shopsId1" property="shopsId" />
+			<result column="shopState" property="shopstate" />
+		</association>
+		<!-- 一对一 -->
+		<association property="goodsTypes" javaType="com.cappuccino.pojo.Goodstypes">
+			<id column="goodstypesId" property="goodstypesId" />
+			<result column="goodstypesName" property="goodstypesName" />
+		</association>
+
+	</resultMap>
+
+
+	<select id="selAllGoods" resultMap="goodsMap">
+		SELECT
+		goods.*,shops.ShopsId,shops.ShopState,goodstypes.goodstypesId,goodstypes.goodstypesName,GoodsOriginalPrice*GoodsDiscount
+		as price
+		from goods,shops,goodstypes WHERE
+		goods.ShopsId=shops.ShopsId
+		AND
+		goods.GoodsTypeId = goodstypes.goodstypesId
+		and GoodsState in(1,3,0,5)
+		AND ShopState =1 and goodsName like "%" #{goodsName}"%"
+		<if test="startDate!=null and startDate!=''">
+			and GoodsTime &gt;= #{startDate}
+			<if test="endDate!=null and endDate!=''">
+				and GoodsTime &lt;= #{endDate}
+			</if>
+		</if>
+		<choose>
+			<when test="1==chooseUD">
+				ORDER BY goodsSalesVolume ASC
+			</when>
+			<when test="2==chooseUD">
+				ORDER BY goodsSalesVolume DESC
+			</when>
+			<when test="1==chooseUDp">
+				ORDER BY price ASC
+			</when>
+			<when test="2==chooseUDp">
+				ORDER BY price DESC
+			</when>
+			<otherwise>
+				ORDER BY GoodsTime DESC,GoodsState DESC
+			</otherwise>
+		</choose>
+
+	</select>
+
+	<!-- 对商品实行删除操作 改状态为4 代表删除 -->
+	<update id="upGoodsState" parameterType="String">
+		update goods set
+		GoodsState =4 where goodsId = #{goodsId}
+	</update>
+
+	<!-- 对商品进行下架封禁处理 改状态为0 -->
+	<update id="upGoodsStop" parameterType="String">
+		update goods set
+		goodsState =0 where goodsId =#{goodsId}
+	</update>
+
+	<!-- 对商品进行下架封禁恢复处理||对审核的商品进行通过审核操作 改状态为1 -->
+	<update id="upGoodsStart" parameterType="String">
+		update goods set
+		goodsState =1 where goodsId =#{goodsId}
+	</update>
+
+	<!-- 统计本网站的所有有效商品的总数 -->
+	<select id="selCount" resultType="int">
+		SELECT COUNT(*) as count FROM goods,shops where goods.ShopsId=shops.ShopsId and GoodsState in(0,1,3,5) and ShopState=1
+	</select>
+	
+	
+	<!-- 主页上显示商品销量怕排行，查询商品销量前十 -->
+	<select id="selTenGoods" resultType="Goods">
+		SELECT * FROM goods ORDER BY GoodsSalesVolume DESC LIMIT 0,10
+	</select>
+	
+	<!-- 这是一个查询成交金额的方法 -->
+	<select id="selAllMoney" resultType="int">
+		SELECT SUM(ShopsSales) FROM shops 
+	</select>
+	
+	<!-- 这是一个查询所有的待处理的信息数的方法 -->
+	<!-- 1.先查询出申请店铺的处理信息 -->
+	<select id="selAllNotInformationShops" resultType="int">
+		SELECT COUNT(*) FROM shops WHERE ShopState=4
+	</select>
+	<!-- 2.再查询出店铺上架商铺的处理信息 -->
+	<select id="selAllNotInformationGoods" resultType="int">
+		SELECT COUNT(*) FROM goods WHERE GoodsState=5
+	</select>
+	
+	<!-- 查询出所有的待发货订单数 -->
+	<select id="selNotOrders" resultType="int">
+		SELECT COUNT(*) FROM ordersinfo where OrdersInfoState = 1
+	</select>
+	
+	<!-- 查询已完成的订单数 -->
+	<select id="selWcOrders" resultType="int">
+		SELECT COUNT(*) FROM ordersinfo where OrdersInfoState in(0,5);
+	</select>
+	
+	<!-- 查询未完成的订单数 -->
+	<select id="selNoOrders" resultType="int">
+		SELECT COUNT(*) FROM ordersinfo where OrdersInfoState =6;
+	</select>
+	
+	<!-- 查询待审核的促销商品个数 -->
+	<select id="selPromotedGoods" resultType="int">
+		SELECT COUNT(*) from goods WHERE GoodsState =5 and GoodsDiscount !=1
+	</select>
+	
+	<!-- 查询已发布的促销商品个数 -->
+	<select id="selPromotGoods" resultType="int">
+		SELECT COUNT(*) from goods WHERE GoodsState in (1,3) and GoodsDiscount !=1
+	</select>
+
+
+</mapper>
